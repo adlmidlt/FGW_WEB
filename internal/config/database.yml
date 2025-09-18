@@ -1,0 +1,12 @@
+PSQL:
+  host: "postgresql"
+  port: 5432
+  name: "fgw_web_db"
+  user: "user1"
+  password: "pass123word"
+  SSLMode: "disable"
+  maxOpenConns: 10
+  maxIdleConns: 5
+  connMaxLifetime: "5m"
+  connMaxIdleTime: "1m"
+  timeout: "5s"

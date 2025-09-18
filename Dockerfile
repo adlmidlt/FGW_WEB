@@ -10,6 +10,9 @@ COPY go.mod go.sum .env ./
 # Подгружает зависимости модуля Go, флаг "-x" - показывает подробную информацию о процессе загрузки, что помогает в отладке
 RUN go mod download -x
 
+# Выполняем go mod tidy
+RUN go mod tidy
+
 # Копируем весь остальной исходный код
 COPY . .
 
@@ -29,11 +32,14 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 
 # Копирует скомпилированный бинарник из стадии builder
-COPY --from=builder /app/main .
+COPY --from=builder --chown=appuser:appgroup /app/internal/config ./internal/config
+COPY --from=builder --chown=appuser:appgroup /app/main .
+COPY --from=builder --chown=appuser:appgroup /app/web ./web
+
 
 # Копирует статические файлы и шаблоны
-COPY --from=builder /app/tempaltes ./tempaltes
-COPY --from=builder /app/static ./static
+#COPY --from=builder /app/tempaltes ./tempaltes
+#COPY --from=builder /app/static ./static
 
 # Переключает на непривилегированного пользователя
 USER appuser
@@ -42,4 +48,4 @@ USER appuser
 EXPOSE 8080
 
 # Команда по умолчанию для запуска контейнера
-CMD["./main"]
+CMD ["./main"]
