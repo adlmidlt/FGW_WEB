@@ -2,12 +2,9 @@ package config
 
 import (
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 	"time"
 )
-
-const pathToYamlFile = "internal/config/database.yml"
 
 type Config struct {
 	PSQL PostgresqlConfig `yaml:"PSQL"`
@@ -26,18 +23,8 @@ type PostgresqlConfig struct {
 	ConnMaxIdleTime time.Duration `yaml:"connMaxIdleTime"`
 }
 
-// LoadConfig - загружает конфигурациионный файл.
-func LoadConfig() Config {
-	var cfg Config
-	if err := cfg.configDatabase(pathToYamlFile); err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
-
-	return cfg
-}
-
-// configDatabase - устанавливает конфигурационные настройки БД из YAML-файла.
-func (c *Config) configDatabase(pathToYamlFile string) error {
+// LoadConfigDatabase - загружает конфигурацию настройки БД из YAML-файла.
+func (c *Config) LoadConfigDatabase(pathToYamlFile string) error {
 	return c.readFromYaml(pathToYamlFile)
 }
 

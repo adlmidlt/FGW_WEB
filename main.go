@@ -5,13 +5,20 @@ import (
 	"fgw_web/internal/database"
 	"fgw_web/internal/server"
 	"html/template"
+	"log"
 	"net/http"
 )
 
 const templateHtmlHome = "web/html/index.html"
+const pathToYamlFile = "internal/config/database.yml"
 
 func main() {
-	cfg := config.LoadConfig()
+	var cfg config.Config
+	err := cfg.LoadConfigDatabase(pathToYamlFile)
+	if err != nil {
+		log.Fatalf("Ошибка загрузки конфигурационных данных: %v", err)
+	}
+
 	db := database.SetupDatabase(cfg)
 	defer database.CloseDatabase(db)
 

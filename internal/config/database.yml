@@ -9,4 +9,3 @@ PSQL:
   maxIdleConns: 5
   connMaxLifetime: "5m"
   connMaxIdleTime: "1m"
-  timeout: "5s"

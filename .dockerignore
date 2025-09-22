@@ -14,7 +14,6 @@
 credentials/
 
 # Исключаем ненужные для сборки файлы
-README.md
 docs/
 test/
 vendor/ # если используете go mod
