@@ -1,62 +1,60 @@
 package config
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
 
 func TestConfig_LoadConfigDatabase(t *testing.T) {
-	type fields struct {
-		PSQL PostgresqlConfig
-	}
-	type args struct {
-		pathToYamlFileTest string
-	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name        string
+		configFile  string
+		wantErr     bool
+		errContains string
 	}{
 		{
-			name:    "Валидный yaml файл",
-			args:    args{pathToYamlFileTest: "testdata/valid_config.yml"},
-			wantErr: false,
+			name:       "Валидный yaml файл",
+			configFile: "testdata/valid_config.yml",
+			wantErr:    false,
 		},
 		{
-			name:    "Файла не существует",
-			args:    args{pathToYamlFileTest: "testdata/not_found.yml"},
-			wantErr: true,
+			name:       "Файла не существует",
+			configFile: "testdata/not_found.yml",
+			wantErr:    true,
 		},
 		{
-			name:    "Не валидное содержание файла",
-			args:    args{pathToYamlFileTest: "testdata/invalid_config.yml"},
-			wantErr: true,
+			name:       "Не валидное содержание файла",
+			configFile: "testdata/invalid_config.yml",
+			wantErr:    true,
 		},
 		{
-			name:    "Пустой файл",
-			args:    args{pathToYamlFileTest: "testdata/empty_config.yml"},
-			wantErr: false,
+			name:       "Пустой файл",
+			configFile: "testdata/empty_config.yml",
+			wantErr:    false,
 		},
 	}
 
 	createTestData(t)
+	defer cleanupTestData(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &Config{
-				PSQL: tt.fields.PSQL,
-			}
-			if err := c.readFromYaml(tt.args.pathToYamlFileTest); (err != nil) != tt.wantErr {
-				t.Errorf("readFromYaml() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err := c.LoadConfigDatabase(tt.args.pathToYamlFileTest); (err != nil) != tt.wantErr {
-				t.Errorf("LoadConfigDatabase() error = %v, wantErr %v", err, tt.wantErr)
+			c := &Config{}
+			err := c.LoadConfigDatabase(tt.configFile)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, c.PSQL)
 			}
 		})
 	}
-
-	cleanupTestData(t)
 }
 
 // createTestData - создаем тестовые данные.
