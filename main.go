@@ -14,13 +14,15 @@ const pathToYamlFile = "internal/config/database.yml"
 
 func main() {
 	var cfg config.Config
-	err := cfg.LoadConfigDatabase(pathToYamlFile)
-	if err != nil {
+	if err := cfg.LoadConfigDatabase(pathToYamlFile); err != nil {
 		log.Fatalf("Ошибка загрузки конфигурационных данных: %v", err)
 	}
 
-	db := database.SetupDatabase(cfg)
-	defer database.CloseDatabase(db)
+	db, err := database.NewPostgresDB(&cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	mux := http.NewServeMux()
 	indexPage(mux)
