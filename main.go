@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fgw_web/internal/config"
 	"fgw_web/internal/database"
 	"fgw_web/internal/server"
@@ -18,7 +19,7 @@ func main() {
 		log.Fatalf("Ошибка загрузки конфигурационных данных: %v", err)
 	}
 
-	db, err := database.NewPostgresDB(&cfg)
+	db, err := database.NewPgxPool(context.Background(), &cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
