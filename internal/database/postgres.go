@@ -2,9 +2,9 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fgw_web/internal/config"
+	"fgw_web/logs"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
@@ -18,50 +18,34 @@ const (
 	maxConnIdleTime = time.Minute * 30
 )
 
-func NewPostgresDB(cfg *config.Config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", connectionStrToDB(cfg))
-	if err != nil {
-		return nil, err
+// NewPgxPool создаёт пул соединений pgxpool на основе заданной конфигурации PSQL.
+func NewPgxPool(ctx context.Context, cfg *config.PostgresqlConfig) (*pgxpool.Pool, error) {
+	if ctx == nil {
+		return nil, errors.New(logs.E3003)
 	}
 
-	return db, nil
-}
+	if cfg == nil {
+		return nil, errors.New(logs.E3004)
+	}
 
-func NewPgxPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
-	pool, err := createPool(ctx, cfg)
+	pool, err := newPoolConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	if err = pool.Ping(ctx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", logs.E3005, err)
 	}
 
 	return pool, nil
 }
 
-func createPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
-	poolCfg, err := createCfgPool(cfg)
-	if err != nil || poolCfg == nil {
-		return nil, fmt.Errorf("ошибка создания подключения пула: %w", err)
-	}
-
-	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+// newPoolConfig создаёт конфигурацию пула pgxpool на основе конфигурации PSQL.
+func newPoolConfig(ctx context.Context, cfg *config.PostgresqlConfig) (*pgxpool.Pool, error) {
+	connStr := formatPSQLConnStr(cfg)
+	poolCfg, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при создании пула: %w", err)
-	}
-
-	return pool, nil
-}
-
-func createCfgPool(cfg *config.Config) (*pgxpool.Config, error) {
-	if cfg == nil {
-		return nil, errors.New("конфигурация не найдена")
-	}
-
-	poolCfg, err := pgxpool.ParseConfig(connectionStrPGXPOOLToDB(cfg))
-	if err != nil {
-		return nil, fmt.Errorf("ошибка парсинга строки подключения: %w", err)
+		return nil, fmt.Errorf("%s: %w", logs.E3000, err)
 	}
 
 	poolCfg.MaxConns = maxConns
@@ -69,18 +53,10 @@ func createCfgPool(cfg *config.Config) (*pgxpool.Config, error) {
 	poolCfg.MaxConnLifetime = maxConnLifetime
 	poolCfg.MaxConnIdleTime = maxConnIdleTime
 
-	return poolCfg, nil
+	return pgxpool.NewWithConfig(ctx, poolCfg)
 }
 
-// connectionStrSQLToDB - строка подключения к БД.
-func connectionStrToDB(cfg *config.Config) string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.PSQL.Host, cfg.PSQL.Port, cfg.PSQL.User, cfg.PSQL.Password, cfg.PSQL.Name,
-	)
-}
-
-// connectionStrPGXPOOLToDB - строка подключения к БД.
-func connectionStrPGXPOOLToDB(cfg *config.Config) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		cfg.PSQL.User, cfg.PSQL.Password, cfg.PSQL.Host, cfg.PSQL.Port, cfg.PSQL.Name)
+// formatPSQLConnStr возвращает строку подключения к PSQL в формате URI.
+func formatPSQLConnStr(cfg *config.PostgresqlConfig) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 }

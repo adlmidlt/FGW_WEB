@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("Ошибка загрузки конфигурационных данных: %v", err)
 	}
 
-	db, err := database.NewPgxPool(context.Background(), &cfg)
+	db, err := database.NewPgxPool(context.Background(), &cfg.PSQL)
 	if err != nil {
 		log.Fatal(err)
 	}
